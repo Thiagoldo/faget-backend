@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contratos {
+  id_contrato                   Int                             @id(map: "contratos_pk") @default(autoincrement())
+  id_empresa                    Int
+  numero                        String                          @db.VarChar(8)
+  processo_aquisicao            String?                         @db.VarChar(20)
+  conta_deposito                String?                         @db.VarChar(30)
+  processo_fiscalizacao         String?                         @db.VarChar(20)
+  instituicao_bancaria          String?                         @db.VarChar(255)
+  inicio_vigencia               DateTime?                       @db.Date
+  empresas                      empresas                        @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "empresas_contratos_fk")
+  funcoes                       funcoes[]
+  movimentacoes_conta_vinculada movimentacoes_conta_vinculada[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model empresas {
+  id_empresa        Int                 @id(map: "empresas_pk") @default(autoincrement())
+  cnpj              String              @unique(map: "empresas_un") @db.VarChar(14)
+  razao_social      String              @db.VarChar(255)
+  nome_fantasia     String              @db.VarChar(255)
+  entidade_sindical String?             @db.VarChar(255)
+  data_base_cct     DateTime?           @db.Date
+  contratos         contratos[]
+  empresas_detalhes empresas_detalhes[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model empresas_detalhes {
+  id_empresa_detalhe          Int      @id(map: "empresas_detalhes_pk") @default(autoincrement())
+  inicio_vigencia             DateTime @db.Date
+  percentual_rat              Int      @db.SmallInt
+  valor_vale_transporte       Float?   @default(0) @db.Real
+  desconto_vale_transporte    Float?   @default(0) @db.Real
+  valor_vale_alimentacao      Float?   @default(0) @db.Real
+  desconto_vale_alimentacao   Float?   @default(0) @db.Real
+  id_empresa                  Int
+  flag_desoneracao            Boolean? @default(false)
+  aliquota_ferias             Float?   @db.Real
+  aliquota_decimo_terceiro    Float?   @db.Real
+  aliquota_multa_fgts         Float?   @db.Real
+  aliquota_submodulo_deposito Float?   @db.Real
+  aliquota_submodulo_retirada Float?   @db.Real
+  empresas                    empresas @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "empresas_empresas_detalhes_fk")
+}
+
+model funcoes {
+  id_funcao                 Int                         @id(map: "funcoes_pk") @default(autoincrement())
+  id_contrato               Int
+  descricao_resumida        String                      @db.VarChar(50)
+  descricao_completa        String?                     @db.VarChar(255)
+  carga_horaria_semanal     Int?                        @default(0) @db.SmallInt
+  turno                     String?                     @db.VarChar(50)
+  escala                    String?                     @db.VarChar(50)
+  contratos                 contratos                   @relation(fields: [id_contrato], references: [id_contrato], onUpdate: NoAction, map: "contratos_funcoes_fk")
+  funcoes_detalhes          funcoes_detalhes[]
+  terceirizado_funcao_aloca terceirizado_funcao_aloca[]
+}
+
+model funcoes_detalhes {
+  id_funcao_detalhe            Int      @id(map: "funcoes_detalhes_pk") @default(autoincrement())
+  valor_salario_base           Float    @default(0) @db.Real
+  valor_adicional_noturno      Float    @default(0) @db.Real
+  valor_noturno                Float    @default(0) @db.Real
+  valor_insalubridade          Float    @default(0) @db.Real
+  valor_periculosidade         Float    @default(0) @db.Real
+  quantidade_vales_transporte  Int      @default(0) @db.SmallInt
+  quantidade_vales_alimentacao Int      @db.SmallInt
+  valor_remuneracao            Float    @default(0) @db.Real
+  id_funcao                    Int
+  inicio_vigencia              DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  funcoes                      funcoes  @relation(fields: [id_funcao], references: [id_funcao], onUpdate: NoAction, map: "funcoes_funcoes_detalhes_fk")
+}
+
+model movimentacoes_conta_vinculada {
+  id_movimentacao          Int                      @id(map: "movimentacoes_conta_vinculada_pk") @default(autoincrement())
+  data_competencia         DateTime                 @default(dbgenerated("((date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone) + '1 mon -1 days'::interval))::date")) @db.Date
+  momento_realizado        DateTime                 @default(dbgenerated("LOCALTIMESTAMP")) @db.Timestamp(6)
+  tipo_movimentacao        Int                      @db.SmallInt
+  motivo_movimentacao      String?                  @db.VarChar(255)
+  observacao_movimentacao  String?                  @db.VarChar
+  valor_total_movimentacao Float                    @default(0) @db.Real
+  id_contrato              Int
+  contratos                contratos                @relation(fields: [id_contrato], references: [id_contrato], onUpdate: NoAction, map: "contratos_movimentacoes_conta_vinculada_fk")
+  movimentacoes_detalhes   movimentacoes_detalhes[]
+}
+
+model movimentacoes_detalhes {
+  id_terceirizado_funcao        Int
+  id_movimentacao               Int
+  avos_ferias                   Int                           @default(0) @db.SmallInt
+  avos_decimo_terceiro          Int                           @default(0) @db.SmallInt
+  valor_ferias                  Float                         @default(0) @db.Real
+  valor_decimo_terceiro         Float                         @default(0) @db.Real
+  valor_multa_fgts              Float                         @default(0) @db.Real
+  valor_submodulo               Float                         @default(0) @db.Real
+  valor_total_movimentacao      Float                         @default(0) @db.Real
+  movimentacoes_conta_vinculada movimentacoes_conta_vinculada @relation(fields: [id_movimentacao], references: [id_movimentacao], onDelete: NoAction, onUpdate: NoAction, map: "movimentacoes_conta_vinculada_movimentacoes_detalhes_fk")
+  terceirizado_funcao_aloca     terceirizado_funcao_aloca     @relation(fields: [id_terceirizado_funcao], references: [id_terceirizado_funcao], onDelete: NoAction, onUpdate: NoAction, map: "terceirizado_funcao_aloca_movimentacoes_detalhes_fk")
+
+  @@id([id_terceirizado_funcao, id_movimentacao], map: "movimentacoes_detalhes_pk")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model provisoes {
+  percentual_rat              Int?     @db.SmallInt
+  flag_desoneracao            Boolean?
+  aliquota_ferias             Float?   @db.Real
+  aliquota_decimo_terceiro    Float?   @db.Real
+  aliquota_multa_fgts         Float?   @db.Real
+  aliquota_submodulo_deposito Float?   @db.Real
+  aliquota_submodulo_retirada Float?   @db.Real
+
+  @@ignore
+}
+
+model terceirizado_funcao_aloca {
+  id_terceirizado_funcao         Int                      @id(map: "terceirizado_funcao_aloca_pk") @default(autoincrement())
+  data_inicio                    DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
+  data_fim                       DateTime?                @db.Date
+  status                         Boolean?                 @default(true)
+  posto                          String?                  @db.VarChar(255)
+  id_funcao                      Int
+  id_terceirizado                Int
+  documentacao_incial_conforme   Boolean?                 @default(false)
+  documentacao_rescisao_conforme Boolean?                 @default(false)
+  movimentacoes_detalhes         movimentacoes_detalhes[]
+  funcoes                        funcoes                  @relation(fields: [id_funcao], references: [id_funcao], onUpdate: NoAction, map: "funcoes_terceirizado_funcao_aloca_fk")
+  terceirizados                  terceirizados            @relation(fields: [id_terceirizado], references: [id_terceirizado], onUpdate: NoAction, map: "terceirizados_terceirizado_funcao_aloca_fk")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model terceirizados {
+  id_terceirizado           Int                         @id(map: "pk_Terceirizados") @default(autoincrement())
+  cpf                       String                      @unique(map: "unique_cpf") @db.VarChar(11)
+  nome                      String                      @db.VarChar(255)
+  sexo                      String?                     @db.VarChar(1)
+  data_nascimento           DateTime?                   @db.Date
+  rg                        String?                     @db.VarChar(20)
+  pis                       String?                     @db.VarChar(20)
+  ctps                      String?                     @db.VarChar(20)
+  email                     String?                     @db.VarChar(100)
+  telefone                  String?                     @db.VarChar(20)
+  endereco                  String?                     @db.VarChar(255)
+  terceirizado_funcao_aloca terceirizado_funcao_aloca[]
+}
+
+model usuarios {
+  id      BigInt @id(map: "usuarios_pk")
+  usuario String @unique(map: "usuarios_unique") @db.VarChar
+  senha   String @db.VarChar
+  nome    String @db.VarChar
+  perfil  String @db.VarChar
+}
