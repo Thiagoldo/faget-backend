@@ -1,16 +1,17 @@
 import {
-  Controller,
-  Get,
-  Post,
+  BadRequestException,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query
 } from '@nestjs/common';
-import { TerceirizadosService } from './terceirizados.service';
 import { CreateTerceirizadoDto } from './dto/create-terceirizado.dto';
 import { UpdateTerceirizadoDto } from './dto/update-terceirizado.dto';
+import { TerceirizadosService } from './terceirizados.service';
 
 @Controller('terceirizados')
 export class TerceirizadosController {
@@ -22,8 +23,18 @@ export class TerceirizadosController {
   }
 
   @Get()
-  findAll(@Query('offset') offset?: number) {
-    return this.terceirizadosService.findAll(+offset);
+  findAll(
+    @Query('itemsPerPage') itemsPerPage: number,
+    @Query('page') page: number,
+    @Query('nome') nome: string,
+  ) {
+    if (!itemsPerPage || !page) {
+      return new BadRequestException(
+        'Items per page and page must be specified',
+      );
+    }
+
+    return this.terceirizadosService.findAll(+itemsPerPage, +page, nome);
   }
 
   @Get(':id')

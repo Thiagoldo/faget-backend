@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateTerceirizadoDto } from './dto/create-terceirizado.dto';
 import { UpdateTerceirizadoDto } from './dto/update-terceirizado.dto';
 import { PrismaClientService } from '@app/prisma-client';
@@ -10,12 +10,21 @@ export class TerceirizadosService {
     return 'This action adds a new terceirizado';
   }
 
-  findAll(offset?: number) {
-    return this.prisma.terceirizados.findMany({
-      skip: offset || 0,
-      take: 10,
+  async findAll(itemsPerPage: number, page: number, nome?: string) {
+    const offset = itemsPerPage * (page - 1);
+    const count = await this.prisma.terceirizados.count({
+      ...(nome && { where: { nome: { contains: nome, mode: 'insensitive' } } }),
+    });
+    if (offset >= count) {
+      return new BadRequestException('Invalid pagination.');
+    }
+    const content = await this.prisma.terceirizados.findMany({
+      ...(nome && { where: { nome: { contains: nome, mode: 'insensitive' } } }),
+      skip: offset,
+      take: itemsPerPage > 0 ? itemsPerPage : count,
       orderBy: { nome: 'asc' },
     });
+    return { content: content, count: count };
   }
 
   findOne(id: number) {
