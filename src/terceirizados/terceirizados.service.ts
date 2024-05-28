@@ -6,8 +6,10 @@ import { PrismaClientService } from '@app/prisma-client';
 @Injectable()
 export class TerceirizadosService {
   constructor(private prisma: PrismaClientService) { }
-  create(createTerceirizadoDto: CreateTerceirizadoDto) {
-    return 'This action adds a new terceirizado';
+  async create(createTerceirizadoDto: CreateTerceirizadoDto) {
+    return await this.prisma.terceirizados.create({
+      data: createTerceirizadoDto,
+    });
   }
 
   async findAll(itemsPerPage: number, page: number, nome?: string) {
@@ -16,7 +18,7 @@ export class TerceirizadosService {
       ...(nome && { where: { nome: { contains: nome, mode: 'insensitive' } } }),
     });
     if (offset >= count) {
-      return new BadRequestException('Invalid pagination.');
+      return { content: [], count: 0 };
     }
     const content = await this.prisma.terceirizados.findMany({
       ...(nome && { where: { nome: { contains: nome, mode: 'insensitive' } } }),
@@ -34,10 +36,13 @@ export class TerceirizadosService {
   }
 
   update(id: number, updateTerceirizadoDto: UpdateTerceirizadoDto) {
-    return `This action updates a #${id} terceirizado`;
+    return this.prisma.terceirizados.update({
+      where: { id_terceirizado: id },
+      data: updateTerceirizadoDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} terceirizado`;
+    return this.prisma.terceirizados.delete({ where: { id_terceirizado: id } });
   }
 }

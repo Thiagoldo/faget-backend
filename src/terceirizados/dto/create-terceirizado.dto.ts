@@ -1,11 +1,20 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateTerceirizadoDto {
   @IsString()
   @IsNotEmpty()
-  private cpf: string;
+  cpf: string;
 
   @IsString()
   @IsNotEmpty()
-  private nome: string;
+  nome: string;
+
+  @IsDate()
+  @Type(() => Date)
+  data_nascimento: Date;
+
+  constructor(partial: Partial<CreateTerceirizadoDto>) {
+    Object.assign(this, partial);
+  }
 }

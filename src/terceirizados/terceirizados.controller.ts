@@ -7,7 +7,7 @@ import {
   Param,
   Patch,
   Post,
-  Query
+  Query,
 } from '@nestjs/common';
 import { CreateTerceirizadoDto } from './dto/create-terceirizado.dto';
 import { UpdateTerceirizadoDto } from './dto/update-terceirizado.dto';
