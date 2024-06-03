@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaClientService } from '@app/prisma-client';
+import { Injectable } from '@nestjs/common';
 import { CreateTerceirizadoDto } from './dto/create-terceirizado.dto';
 import { UpdateTerceirizadoDto } from './dto/update-terceirizado.dto';
-import { PrismaClientService } from '@app/prisma-client';
 
 @Injectable()
 export class TerceirizadosService {
